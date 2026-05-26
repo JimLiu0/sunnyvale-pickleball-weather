@@ -1,6 +1,6 @@
 import { writeFile } from "node:fs/promises";
 
-const TITLE = "Sunnyvale Pickleball";
+const TITLE = "Sunnyvale Tech Corners Pickleball";
 const PAGE_URL =
   process.env.PAGE_URL ||
   "https://JimLiu0.github.io/sunnyvale-pickleball-weather/";
