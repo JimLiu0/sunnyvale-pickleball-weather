@@ -2,12 +2,14 @@
 
 Minimal GitHub Pages site for Slack link unfurls.
 
-The page URL stays fixed, and a scheduled GitHub Action rewrites `index.html` shortly before your Slack workflow posts the link. Slack unfurls then read updated Open Graph metadata from that same URL.
+The site publishes one main URL plus day-specific URLs, and a scheduled GitHub Action rewrites all pages shortly before your Slack workflow posts links.
 
 ## Files
 
-- `index.html`: static page containing Open Graph tags and visible fallback text.
-- `scripts/update-page.mjs`: Node script that fetches Open-Meteo and rewrites `index.html`.
+- `index.html`: main static page containing Open Graph tags and visible fallback text.
+- `tuesday/index.html`: Tuesday-specific URL path for Slack unfurls.
+- `thursday/index.html`: Thursday-specific URL path for Slack unfurls.
+- `scripts/update-page.mjs`: Node script that fetches Open-Meteo and rewrites all pages.
 - `.github/workflows/update-weather.yml`: scheduled workflow that runs the updater and commits changes.
 
 ## Enable GitHub Pages
@@ -44,12 +46,21 @@ Run from repo root:
 node scripts/update-page.mjs
 ```
 
-That command rewrites `index.html` with:
+That command rewrites `index.html`, `tuesday/index.html`, and `thursday/index.html` with:
 
 - `og:title` = `Sunnyvale Pickleball`
 - `og:description` = `Weather today: {temp}F {condition}`
 - `og:type` = `website`
 - `og:url` = your fixed URL
+
+## Slack posting URLs
+
+Use separate fixed URLs in Slack to reduce unfurl cache collisions:
+
+- Tuesday message URL: `https://JimLiu0.github.io/sunnyvale-pickleball-weather/tuesday/`
+- Thursday message URL: `https://JimLiu0.github.io/sunnyvale-pickleball-weather/thursday/`
+
+Both are updated by the same scheduled workflow.
 
 If weather fetch fails, it uses:
 
