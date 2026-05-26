@@ -1,10 +1,24 @@
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const TITLE = "Sunnyvale Tech Corners Pickleball";
+const TITLE = "Sunnyvale Pickleball";
 const PAGE_URL =
   process.env.PAGE_URL ||
   "https://JimLiu0.github.io/sunnyvale-pickleball-weather/";
-const OUTPUT_PATH = new URL("../index.html", import.meta.url);
+const BASE_URL = PAGE_URL.replace(/\/+$/, "");
+const OUTPUT_PAGES = [
+  {
+    outputPath: new URL("../index.html", import.meta.url),
+    pageUrl: `${BASE_URL}/`,
+    label: "index.html",
+  },
+  {
+    outputPath: new URL("../preview/index.html", import.meta.url),
+    pageUrl: `${BASE_URL}/preview/`,
+    label: "preview/index.html",
+  },
+];
 const OPEN_METEO_HOURLY_URL =
   "https://api.open-meteo.com/v1/forecast?latitude=37.3688&longitude=-122.0363&temperature_unit=fahrenheit&timezone=America%2FLos_Angeles&forecast_days=1&hourly=temperature_2m,weather_code";
 const OPEN_METEO_CURRENT_URLS = [
@@ -117,10 +131,10 @@ async function getDescription() {
     }
   }
 
-  return "Weather unavailable";
+  return "Weather today: --F Weather unavailable";
 }
 
-function buildHtml(description) {
+function buildHtml(description, pageUrl) {
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -130,7 +144,7 @@ function buildHtml(description) {
     <meta property="og:title" content="${TITLE}" />
     <meta property="og:description" content="${description}" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="${PAGE_URL}" />
+    <meta property="og:url" content="${pageUrl}" />
   </head>
   <body>
     <main>
@@ -143,5 +157,10 @@ function buildHtml(description) {
 }
 
 const description = await getDescription();
-await writeFile(OUTPUT_PATH, buildHtml(description), "utf8");
-console.log(`Updated index.html with: ${description}`);
+
+for (const page of OUTPUT_PAGES) {
+  const outputFile = fileURLToPath(page.outputPath);
+  await mkdir(dirname(outputFile), { recursive: true });
+  await writeFile(page.outputPath, buildHtml(description, page.pageUrl), "utf8");
+  console.log(`Updated ${page.label} with: ${description}`);
+}
