@@ -5,8 +5,12 @@ const PAGE_URL =
   process.env.PAGE_URL ||
   "https://JimLiu0.github.io/sunnyvale-pickleball-weather/";
 const OUTPUT_PATH = new URL("../index.html", import.meta.url);
-const OPEN_METEO_URL =
-  "https://api.open-meteo.com/v1/forecast?latitude=37.3688&longitude=-122.0363&current=temperature_2m,weather_code";
+const OPEN_METEO_HOURLY_URL =
+  "https://api.open-meteo.com/v1/forecast?latitude=37.3688&longitude=-122.0363&temperature_unit=fahrenheit&timezone=America%2FLos_Angeles&forecast_days=1&hourly=temperature_2m,weather_code";
+const OPEN_METEO_CURRENT_URLS = [
+  "https://api.open-meteo.com/v1/forecast?latitude=37.3688&longitude=-122.0363&temperature_unit=fahrenheit&current=temperature_2m,weather_code",
+  "https://api.open-meteo.com/v1/forecast?latitude=37.3688&longitude=-122.0363&temperature_unit=fahrenheit&current_weather=true",
+];
 
 function toCondition(weatherCode) {
   if (weatherCode === 0) {
@@ -37,31 +41,83 @@ function toCondition(weatherCode) {
   return "Cloudy";
 }
 
+function parseOpenMeteo(data) {
+  const tempF =
+    data?.current?.temperature_2m ?? data?.current_weather?.temperature;
+  const weatherCode =
+    data?.current?.weather_code ?? data?.current_weather?.weathercode;
+
+  if (typeof tempF !== "number" || typeof weatherCode !== "number") {
+    throw new Error("Missing weather fields");
+  }
+
+  return {
+    tempF: Math.round(tempF),
+    condition: toCondition(weatherCode),
+  };
+}
+
 async function getDescription() {
   try {
-    const response = await fetch(OPEN_METEO_URL, {
-      headers: { accept: "application/json" },
+    const hourlyResponse = await fetch(OPEN_METEO_HOURLY_URL, {
+      headers: {
+        accept: "application/json",
+        "user-agent": "sunnyvale-pickleball-weather-bot",
+      },
     });
 
-    if (!response.ok) {
-      throw new Error(`Unexpected status ${response.status}`);
+    if (!hourlyResponse.ok) {
+      throw new Error(`Unexpected status ${hourlyResponse.status}`);
     }
 
-    const data = await response.json();
-    const tempC = data?.current?.temperature_2m;
-    const weatherCode = data?.current?.weather_code;
+    const data = await hourlyResponse.json();
+    const times = data?.hourly?.time;
+    const temps = data?.hourly?.temperature_2m;
+    const codes = data?.hourly?.weather_code;
 
-    if (typeof tempC !== "number" || typeof weatherCode !== "number") {
-      throw new Error("Missing weather fields");
+    if (!Array.isArray(times) || !Array.isArray(temps) || !Array.isArray(codes)) {
+      throw new Error("Missing hourly weather fields");
     }
 
-    const tempF = Math.round((tempC * 9) / 5 + 32);
+    const targetIndex = times.findIndex((time) => String(time).endsWith("T16:00"));
+    if (targetIndex < 0) {
+      throw new Error("No 4 PM forecast entry found");
+    }
+
+    const tempF = temps[targetIndex];
+    const weatherCode = codes[targetIndex];
+    if (typeof tempF !== "number" || typeof weatherCode !== "number") {
+      throw new Error("Invalid 4 PM forecast values");
+    }
+
     const condition = toCondition(weatherCode);
-    return `Weather today: ${tempF}F ${condition}`;
+    return `Weather today: ${Math.round(tempF)}F ${condition}`;
   } catch (error) {
-    console.warn("Weather fetch failed; using fallback:", error);
-    return "Weather today: --F Weather unavailable";
+    console.warn("4 PM forecast fetch failed; trying current weather fallback:", error);
   }
+
+  for (const url of OPEN_METEO_CURRENT_URLS) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          accept: "application/json",
+          "user-agent": "sunnyvale-pickleball-weather-bot",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Unexpected status ${response.status}`);
+      }
+
+      const data = await response.json();
+      const { tempF, condition } = parseOpenMeteo(data);
+      return `Weather today: ${tempF}F ${condition}`;
+    } catch (error) {
+      console.warn(`Weather fetch attempt failed for ${url}:`, error);
+    }
+  }
+
+  return "Weather unavailable";
 }
 
 function buildHtml(description) {
