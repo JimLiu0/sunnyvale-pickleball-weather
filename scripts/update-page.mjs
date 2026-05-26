@@ -14,9 +14,14 @@ const OUTPUT_PAGES = [
     label: "index.html",
   },
   {
-    outputPath: new URL("../preview/index.html", import.meta.url),
-    pageUrl: `${BASE_URL}/preview/`,
-    label: "preview/index.html",
+    outputPath: new URL("../tuesday/index.html", import.meta.url),
+    pageUrl: `${BASE_URL}/tuesday/`,
+    label: "tuesday/index.html",
+  },
+  {
+    outputPath: new URL("../thursday/index.html", import.meta.url),
+    pageUrl: `${BASE_URL}/thursday/`,
+    label: "thursday/index.html",
   },
 ];
 const OPEN_METEO_HOURLY_URL =
