@@ -24,8 +24,6 @@ const OUTPUT_PAGES = [
     label: "thursday/index.html",
   },
 ];
-const OPEN_METEO_HOURLY_URL =
-  "https://api.open-meteo.com/v1/forecast?latitude=37.3688&longitude=-122.0363&temperature_unit=fahrenheit&timezone=America%2FLos_Angeles&forecast_days=1&hourly=temperature_2m,weather_code";
 const OPEN_METEO_CURRENT_URLS = [
   "https://api.open-meteo.com/v1/forecast?latitude=37.3688&longitude=-122.0363&temperature_unit=fahrenheit&current=temperature_2m,weather_code",
   "https://api.open-meteo.com/v1/forecast?latitude=37.3688&longitude=-122.0363&temperature_unit=fahrenheit&current_weather=true",
@@ -77,44 +75,6 @@ function parseOpenMeteo(data) {
 }
 
 async function getDescription() {
-  try {
-    const hourlyResponse = await fetch(OPEN_METEO_HOURLY_URL, {
-      headers: {
-        accept: "application/json",
-        "user-agent": "sunnyvale-pickleball-weather-bot",
-      },
-    });
-
-    if (!hourlyResponse.ok) {
-      throw new Error(`Unexpected status ${hourlyResponse.status}`);
-    }
-
-    const data = await hourlyResponse.json();
-    const times = data?.hourly?.time;
-    const temps = data?.hourly?.temperature_2m;
-    const codes = data?.hourly?.weather_code;
-
-    if (!Array.isArray(times) || !Array.isArray(temps) || !Array.isArray(codes)) {
-      throw new Error("Missing hourly weather fields");
-    }
-
-    const targetIndex = times.findIndex((time) => String(time).endsWith("T16:00"));
-    if (targetIndex < 0) {
-      throw new Error("No 4 PM forecast entry found");
-    }
-
-    const tempF = temps[targetIndex];
-    const weatherCode = codes[targetIndex];
-    if (typeof tempF !== "number" || typeof weatherCode !== "number") {
-      throw new Error("Invalid 4 PM forecast values");
-    }
-
-    const condition = toCondition(weatherCode);
-    return `Weather today: ${Math.round(tempF)}F ${condition}`;
-  } catch (error) {
-    console.warn("4 PM forecast fetch failed; trying current weather fallback:", error);
-  }
-
   for (const url of OPEN_METEO_CURRENT_URLS) {
     try {
       const response = await fetch(url, {
