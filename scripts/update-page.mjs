@@ -25,8 +25,8 @@ const OUTPUT_PAGES = [
   },
 ];
 const OPEN_METEO_CURRENT_URLS = [
-  "https://api.open-meteo.com/v1/forecast?latitude=37.3688&longitude=-122.0363&temperature_unit=fahrenheit&current=temperature_2m,weather_code",
-  "https://api.open-meteo.com/v1/forecast?latitude=37.3688&longitude=-122.0363&temperature_unit=fahrenheit&current_weather=true",
+  "https://api.open-meteo.com/v1/forecast?latitude=37.3688&longitude=-122.0363&temperature_unit=fahrenheit&timezone=America%2FLos_Angeles&current=temperature_2m,weather_code",
+  "https://api.open-meteo.com/v1/forecast?latitude=37.3688&longitude=-122.0363&temperature_unit=fahrenheit&timezone=America%2FLos_Angeles&current_weather=true",
 ];
 
 function toCondition(weatherCode) {
