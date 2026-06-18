@@ -2,8 +2,8 @@ name: Update weather metadata
 
 on:
   schedule:
-    # 3:40 PM America/Los_Angeles during daylight saving (UTC-7), Tue/Thu.
-    - cron: "40 22 * * 2,4"
+    # Every hour at :30 UTC (e.g. 3:30 PM PT during daylight saving).
+    - cron: "30 * * * *"
   workflow_dispatch:
 
 permissions:
